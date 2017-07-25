@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>照片墙</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        ul{
+            width: 480px;
+            height: 640px;
+            margin: 10px auto;
+            padding: 5px;
+            background: #ccc;
+        }
+        ul li{
+            width: 150px;
+            height: 150px;
+            margin: 5px;
+            float: left;
+            background: steelblue;
+        }
+        ul li img{
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<ul>
+    <li><img src="img/1.png" alt=""/></li>
+    <li><img src="img/2.png" alt=""/></li>
+    <li><img src="img/3.png" alt=""/></li>
+    <li><img src="img/4.png" alt=""/></li>
+    <li><img src="img/5.png" alt=""/></li>
+    <li><img src="img/6.png" alt=""/></li>
+    <li><img src="img/7.png" alt=""/></li>
+    <li><img src="img/8.png" alt=""/></li>
+    <li><img src="img/9.png" alt=""/></li>
+    <li><img src="img/10.png" alt=""/></li>
+    <li><img src="img/11.png" alt=""/></li>
+    <li><img src="img/12.png" alt=""/></li>
+</ul>
+<script src="js/utils.js"></script>
+<script src="js/move.js"></script>
+<script src="js/event.js"></script>
+<script src="js/Drag.js"></script>
+<script>
+    var aLi=document.getElementsByTagName('li');
+    //1、布局转换：从浮动转为定位
+    for(var i=aLi.length-1;i>=0;i--){//倒叙进行定位，解决覆盖的问题
+        var oLi=aLi[i];
+        oLi.style.left=(oLi.l=oLi.offsetLeft)+'px';
+        oLi.style.top=(oLi.t=oLi.offsetTop)+'px';
+        oLi.style.position='absolute';
+        oLi.style.margin=0;//left 和 top中都包包含设置的margin，css样式中也设置的margin，会重复，所以赋值为0
+        new Drag(oLi).on('selfDown',creaseIndex).on('selfMove',hited).on('selfUp',changePos);
+    }
+    var zIndex=0;
+    //按下某个元素的时候，提高当前的层级
+    function creaseIndex(){
+        this.ele.style.zIndex=++zIndex;
+    }
+    //判断两个元素是否碰撞
+    function isHited(l,r){
+        if(l.offsetLeft+ l.offsetWidth< r.offsetLeft||l.offsetTop+ l.offsetHeight< r.offsetTop||l.offsetLeft> r.offsetWidth+ r.offsetLeft||l.offsetTop> r.offsetHeight+ r.offsetTop ){
+            return false;//代表没有碰撞的情况
+        }else{
+            return true;//代表碰撞的情况
+        }
+    }
+    //让发生碰撞的元素都变成红色
+    function hited(){
+        this.aHited=[];//数组中存的都是跟他发生碰撞的元素
+        //拿当前的这个元素，跟每个元素进行测试，碰到的背景颜色都变成红色，没碰到的背景不变
+        for(var i=0;i<aLi.length;i++){
+            var oLi=aLi[i];
+            if(oLi==this.ele) continue;//for循环得到的oLi可能包含当前操作的元素this.ele；判断，如果是当前操作的元素，直接continue，不进行设置
+            if(isHited(this.ele,oLi)){
+                this.aHited.push(oLi);//存放到数组中
+                oLi.style.background='red';
+            }else{
+                oLi.style.background=null;//让其他的元素背景颜色变为原来的颜色
+            }
+        }
+    }
+    function changePos(){
+        var a=this.aHited;//得到hited中得到的数组
+        if(a && a.length){//如果数组存在的话
+            //从发生碰撞元素的数组中，找到跟他距离最近的元素，交换位置
+            for(var i=0;i<a.length;i++){
+                var oLi=a[i];
+                oLi.distance=Math.pow(this.ele.offsetTop-oLi.offsetTop,2)+Math.pow(this.ele.offsetLeft-oLi.offsetLeft,2);//将距离设置在元素的自定义属性上，调用的时候，为a.distance获得值
+                oLi.style.background=null;
+            }
+            a.sort(function(a,b){
+                return a.distance- b.distance;
+            });
+            var shortest=a[0];
+            //让当前元素距离最短的元素，以运动的形式交换位置；
+            animate(shortest,{left:this.ele.l,top:this.ele.t},{duration:500,effect:3});
+            animate(this.ele,{left:shortest.l,top:shortest.t},{duration:500,effect:3});
+            this.ele.style.background='purple';
+            shortest.style.background='purple';
+            //交换两个元素身上以前的坐标位置
+            var l=this.ele.l,t=this.ele.t;
+            this.ele.l=shortest.l,this.ele.t=shortest.t;
+            shortest.l=l,shortest.t=t;
+        }else{//数组不存在的情况下，回到原来的位置：操作的元素this.ele没有碰撞元素的情况
+            animate(this.ele,{left:this.ele.l,top:this.ele.t},{duration:500,effect:3})
+        }
+
+    }
+
+
+</script>
+</body>
+</html>
